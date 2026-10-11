@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>aws-adr banner and navigation buttons</title>
+<!-- Source of ../banner.webp and ../nav-*.webp. The banner is dark in both themes, so render it light only:
+     uvx --from playwright --with pillow python -I <skill-dir>/scripts/render.py assets/source/brand.html --root assets/source --out assets --items banner --themes light --max-kb 400
+     uvx --from playwright --with pillow python -I <skill-dir>/scripts/render.py assets/source/brand.html --root assets/source --out assets --items nav-install,nav-what,nav-lifecycle,nav-format -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&display=swap">
+<script src="shared.js"></script>
+<link rel="stylesheet" href="shared.css">
+<style>
+/* banner: dark tokens pinned so it looks the same in both themes */
+#banner { height: 440px; --paper: #0f141a; --ink: #ebebf0; --muted: #c6c6cd; --card: #161d26; --cardline: #424650; --shadow: rgba(0,0,0,.5);
+  --accent: #42b4ff; --accent-soft: #001129; --ok: #2bb534; --ok-soft: #001401; --err: #ff7a7a; --err-soft: #1f0000; --warn: #fbd332; --warn-soft: #191100;
+  --dot: rgba(255,255,255,.07); --glow1: rgba(31,192,180,.2); --glow2: rgba(143,111,240,.34); --glow3: rgba(255,106,85,.24); }
+#banner .wm-cube { position: absolute; left: 620px; top: -70px; width: 580px; height: 580px; opacity: .55; }
+#banner .id { position: absolute; left: 64px; top: 78px; width: 560px; }
+.lock { display: flex; align-items: center; gap: 22px; }
+.lock svg { width: 92px; height: 92px; flex: none; }
+.lock .wm { font: 800 68px/1 "Open Sans", Arial, sans-serif; letter-spacing: -0.02em; }
+#banner .tag { margin-top: 26px; font: 700 34px/1.2 "Open Sans", Arial, sans-serif; }
+#banner .sub { margin-top: 12px; font-size: 20px; line-height: 1.45; color: #c6c6cd; }
+#banner .chips { position: absolute; left: 64px; top: 344px; display: flex; gap: 10px; }
+#banner .line { position: absolute; left: 689px; top: 70px; width: 3px; height: 278px; border-radius: 2px; background: var(--grad); opacity: .85; }
+#banner .node { position: absolute; left: 681px; width: 19px; height: 19px; border-radius: 50%; background: #0f141a; border: 4px solid var(--c); }
+.mock { position: absolute; left: 724px; width: 412px; height: 100px; padding: 0 20px; display: flex; align-items: center; gap: 14px; }
+.mock .col { flex: 1; min-width: 0; }
+.mock .top { display: flex; align-items: center; justify-content: space-between; }
+.mock .num { font: 700 17px Monaco, Menlo, Consolas, monospace; color: #a4a4ad; }
+.mock .t { margin-top: 4px; font: 700 21px "Open Sans", Arial, sans-serif; color: #ebebf0; white-space: nowrap; }
+
+.item.nav { height: 56px; display: flex; align-items: center; justify-content: center; gap: 10px; color: var(--accent);
+  font: 700 22px "Open Sans", Arial, sans-serif; border: 3px solid transparent;
+  background: linear-gradient(var(--card), var(--card)) padding-box, var(--grad) border-box; }
+.item.nav::before { display: none; }
+.item.nav svg { width: 22px; height: 22px; flex: none; }
+</style>
+</head>
+<body>
+<div class="sheet">
+
+<div class="item" id="banner">
+  <svg class="wm-cube" viewBox="0 0 64 64" aria-hidden="true"><g fill="none" stroke="url(#mg)" stroke-width="0.9" stroke-linecap="round" stroke-linejoin="round"><path d="M32 4 57 18.5V46.5L32 61 7 46.5V18.5Z"/><path d="M7 18.5 32 33 57 18.5M32 33V61"/></g></svg>
+  <div class="id">
+    <div class="lock"><svg viewBox="0 0 64 64" aria-hidden="true"><use href="#mark"/></svg><span class="wm">aws-adr</span></div>
+    <div class="tag">Record why, not just what.</div>
+    <div class="sub">An agent skill for Architectural Decision Records, in the AWS Prescriptive Guidance format.</div>
+  </div>
+  <div class="chips"><span class="chip blue">Proposed</span><span class="chip ok">Accepted</span><span class="chip err">Rejected</span><span class="chip warn">Superseded</span></div>
+  <div class="line"></div>
+  <span class="node" style="top:90px;--c:#42b4ff"></span><span class="node" style="top:202px;--c:#2bb534"></span><span class="node" style="top:314px;--c:#fbd332"></span>
+  <div class="card s c-blue mock" style="top:48px"><span class="bd"><svg class="ic"><use href="#i-edit"/></svg></span><div class="col"><div class="top"><span class="num">ADR-0001</span><span class="chip blue">Proposed</span></div><div class="t">Example: adopt an event bus</div></div></div>
+  <div class="card s c-ok mock" style="top:160px"><span class="bd"><svg class="ic"><use href="#i-check"/></svg></span><div class="col"><div class="top"><span class="num">ADR-0002</span><span class="chip ok">Accepted</span></div><div class="t">Example: split the monolith</div></div></div>
+  <div class="card s c-warn mock" style="top:272px"><span class="bd"><svg class="ic"><use href="#i-swap"/></svg></span><div class="col"><div class="top"><span class="num">ADR-0003</span><span class="chip warn">Superseded</span></div><div class="t">Example: retire the old API</div></div></div>
+</div>
+
+<div class="item nav" id="nav-install" style="width:176px"><svg><use href="#i-terminal"/></svg>Install</div>
+<div class="item nav" id="nav-what" style="width:300px"><svg><use href="#i-file"/></svg>What is an ADR</div>
+<div class="item nav" id="nav-lifecycle" style="width:198px"><svg><use href="#i-loop"/></svg>Lifecycle</div>
+<div class="item nav" id="nav-format" style="width:176px"><svg><use href="#i-list"/></svg>Format</div>
+
+</div>
+</body>
+</html>

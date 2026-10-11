@@ -1,0 +1,648 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>aws-adr - ADR skill for coding agents</title>
+<meta name="description" content="An agent skill that teaches your coding agent to write Architectural Decision Records in the AWS Prescriptive Guidance format. Install with one command.">
+<meta name="theme-color" content="#f6f6f9" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0f141a" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<meta property="og:type" content="website">
+<meta property="og:title" content="aws-adr - ADR skill for coding agents">
+<meta property="og:description" content="Record why, not just what. An agent skill for Architectural Decision Records in the AWS Prescriptive Guidance format.">
+<meta property="og:url" content="https://the-khiem7.github.io/aws-adr/">
+<meta property="og:image" content="https://the-khiem7.github.io/aws-adr/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="aws-adr - ADR skill for coding agents">
+<meta name="twitter:description" content="Record why, not just what. An agent skill for Architectural Decision Records in the AWS Prescriptive Guidance format.">
+<meta name="twitter:image" content="https://the-khiem7.github.io/aws-adr/assets/og.png">
+<script>
+(function () {
+  var r = document.documentElement, t = null, l = null;
+  try { t = localStorage.getItem("adr-theme"); l = localStorage.getItem("adr-lang"); } catch (e) {}
+  if (t !== "dark" && t !== "light") t = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  if (l !== "vi" && l !== "en") l = /^vi/i.test(navigator.language || "") ? "vi" : "en";
+  r.dataset.theme = t; r.dataset.lang = l; r.lang = l; r.classList.add("js");
+})();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&display=swap"></noscript>
+<style>
+/* Tokens: AWS Cloudscape design tokens (visual refresh), light and dark, plus the brand gradient. */
+:root {
+  --bg: #f6f6f9; --card: #ffffff; --ink: #0f141a; --muted: #424650; --line: #c6c6cd;
+  --accent: #006ce0; --accent-hover: #002b66; --accent-soft: #f0fbff;
+  --ok: #00802f; --ok-soft: #effff1; --err: #db0000; --err-soft: #fff5f5; --warn: #855900; --warn-soft: #fffef0;
+  --shadow: rgba(0, 7, 22, 0.14); --dot: rgba(0, 7, 22, 0.08);
+  --grad: linear-gradient(135deg, #1fc0b4, #279ee9 22%, #9d70e2 50%, #f05ab0 74%, #fd5970 92%, #ff7a3a);
+  --font: "Open Sans", "Helvetica Neue", Roboto, Arial, sans-serif;
+  --mono: Monaco, Menlo, Consolas, "Courier New", monospace;
+}
+html[data-theme="dark"] {
+  --bg: #0f141a; --card: #161d26; --ink: #ebebf0; --muted: #c6c6cd; --line: #424650;
+  --accent: #42b4ff; --accent-hover: #75cfff; --accent-soft: #001129;
+  --ok: #2bb534; --ok-soft: #001401; --err: #ff7a7a; --err-soft: #1f0000; --warn: #fbd332; --warn-soft: #191100;
+  --shadow: rgba(0, 0, 0, 0.5); --dot: rgba(255, 255, 255, 0.06);
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; font: 16px/1.6 var(--font); color: var(--ink); background: var(--bg); -webkit-text-size-adjust: 100%; overflow-x: hidden; }
+a { color: var(--accent); }
+a:hover { color: var(--accent-hover); }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+h1, h2, h3, p { margin: 0; }
+.wrap { max-width: 1120px; margin: 0 auto; padding: 0 16px; }
+.skip { position: absolute; left: -999px; top: 0; background: var(--card); color: var(--ink); padding: 10px 16px; z-index: 30; }
+.skip:focus { left: 8px; top: 8px; }
+svg.ic { width: 22px; height: 22px; flex: none; }
+.c-blue { --c: var(--accent); } .c-ok { --c: var(--ok); } .c-err { --c: var(--err); } .c-warn { --c: var(--warn); } .c-mute { --c: var(--muted); }
+.bd { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; flex: none; color: var(--c, var(--accent)); background: color-mix(in srgb, var(--c, var(--accent)) 14%, transparent); }
+
+/* top bar */
+.bar { background: #0f141a; color: #ebebf0; position: sticky; top: 0; z-index: 20; border-bottom: 1px solid #424650; }
+.bar .wrap { display: flex; align-items: center; gap: 8px; min-height: 56px; }
+.brand { display: flex; align-items: center; gap: 10px; color: #ebebf0; text-decoration: none; font-weight: 800; font-size: 18px; margin-right: auto; min-height: 44px; }
+.brand:hover { color: #ebebf0; }
+.brand svg { width: 30px; height: 30px; }
+.bar nav { display: flex; gap: 4px; }
+.bar nav a { color: #ebebf0; text-decoration: none; padding: 0 12px; min-height: 44px; display: inline-flex; align-items: center; font-size: 14px; border-radius: 20px; }
+.bar nav a:hover { background: #1b2a4a; color: #ebebf0; }
+.seg { display: inline-flex; border: 1px solid #6b6e7a; border-radius: 20px; overflow: hidden; }
+.seg button, .tbtn { font: 700 13px var(--font); color: #ebebf0; background: transparent; border: 0; min-width: 44px; min-height: 44px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: #42b4ff; color: #0f141a; }
+.tbtn { border: 1px solid #6b6e7a; border-radius: 20px; padding: 0 14px; }
+.tbtn:hover, .seg button:hover:not([aria-pressed="true"]) { background: #1b2a4a; }
+@media (max-width: 760px) { .bar nav { display: none; } }
+
+/* hero */
+.hero { background: #0f141a; color: #ebebf0; position: relative; overflow: hidden; isolation: isolate; }
+.hero::before { content: ""; position: absolute; inset: 0; z-index: -2;
+  background:
+    radial-gradient(620px 420px at 0% 0%, rgba(31,192,180,.20), transparent 70%),
+    radial-gradient(760px 480px at 100% 0%, rgba(143,111,240,.38), transparent 70%),
+    radial-gradient(640px 420px at 100% 100%, rgba(255,106,85,.26), transparent 70%),
+    radial-gradient(rgba(255,255,255,.07) 1.3px, transparent 1.7px) 0 0 / 32px 32px; }
+.hero .cube { position: absolute; right: -120px; top: -90px; width: 720px; height: 720px; opacity: .5; z-index: -1; }
+.hero .wrap { display: grid; grid-template-columns: 1.05fr 1fr; gap: 48px; align-items: center; padding-top: 72px; padding-bottom: 88px; }
+.eyebrow { font: 700 13px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: #75cfff; margin-bottom: 16px; }
+.hero h1 { font-size: clamp(36px, 6.4vw, 64px); line-height: 1.06; font-weight: 800; letter-spacing: -0.025em; margin-bottom: 20px; }
+.gx { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.hero .lead { font-size: 18px; line-height: 1.6; color: #c6c6cd; margin-bottom: 28px; max-width: 34em; }
+.hero .note { font-size: 14px; margin-top: 14px; color: #c6c6cd; }
+.cmd { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; background: #161d26; border: 1px solid #6b6e7a; border-radius: 16px; padding: 10px 10px 10px 18px; max-width: 540px; }
+.cmd code { font: 14px var(--mono); color: #ebebf0; word-break: break-all; flex: 1 1 220px; }
+.btn { font: 700 14px var(--font); background: #42b4ff; color: #0f141a; border: 0; border-radius: 20px; padding: 0 20px; min-height: 44px; cursor: pointer; }
+.btn:hover { background: #75cfff; }
+
+.tl { position: relative; padding-left: 48px; display: flex; flex-direction: column; gap: 20px; }
+.tl::before { content: ""; position: absolute; left: 14px; top: 28px; bottom: 28px; width: 3px; border-radius: 2px; background: var(--grad); opacity: .85; }
+.mock::before { content: ""; position: absolute; left: -42px; top: 50%; width: 19px; height: 19px; margin-top: -9.5px; border-radius: 50%; background: #0f141a; border: 4px solid var(--c); }
+.mock { position: relative; background: #161d26; border: 1px solid color-mix(in srgb, var(--c) 60%, #424650); border-radius: 16px; padding: 16px 18px; display: flex; align-items: center; gap: 14px; box-shadow: inset 0 4px 0 var(--c), 0 14px 30px -12px rgba(0,0,0,.6); }
+.mock .bd { background: color-mix(in srgb, var(--c) 16%, transparent); color: var(--c); }
+.mock .col { flex: 1; min-width: 0; }
+.mock .top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.mock .num { font: 700 13px var(--mono); color: #a4a4ad; }
+.mock .t { margin-top: 2px; font-weight: 700; font-size: 17px; color: #ebebf0; }
+.mock { --c: #42b4ff; }
+.mock.ok { --c: #2bb534; } .mock.warn { --c: #fbd332; }
+.chip { font: 700 13px var(--font); padding: 0 8px; border-radius: 4px; border: 1.5px solid currentColor; display: inline-block; line-height: 22px; white-space: nowrap; }
+.chip.blue { color: #42b4ff; background: #001129; } .chip.ok { color: #2bb534; background: #001401; } .chip.warn { color: #fbd332; background: #191100; }
+.chip.plain { color: var(--muted); }
+@media (prefers-reduced-motion: no-preference) {
+  .tl .mock { animation: rise .7s cubic-bezier(.2,.7,.2,1) both; }
+  .tl .mock:nth-of-type(2) { animation-delay: .12s; } .tl .mock:nth-of-type(3) { animation-delay: .24s; }
+  .hero .cube { animation: drift 18s ease-in-out infinite alternate; }
+}
+@keyframes rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+@keyframes drift { from { transform: rotate(-3deg) translateY(0); } to { transform: rotate(3deg) translateY(14px); } }
+@media (max-width: 900px) { .hero .wrap { grid-template-columns: 1fr; gap: 40px; padding-top: 44px; padding-bottom: 56px; } .hero .cube { opacity: .3; right: -260px; } }
+
+/* sections */
+section.sec { padding: 72px 0 0; }
+section.sec h2 { font-size: clamp(26px, 4vw, 36px); line-height: 1.2; letter-spacing: -0.015em; margin-bottom: 12px; }
+section.sec .intro { color: var(--muted); max-width: 44em; font-size: 17px; margin-bottom: 28px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 20px; box-shadow: 0 1px 1px var(--shadow); }
+.grid4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; }
+.grid4 .card { position: relative; box-shadow: inset 0 4px 0 var(--c, var(--accent)), 0 1px 1px var(--shadow); transition: transform .2s ease, box-shadow .2s ease; }
+.grid4 .card .bd { margin-bottom: 14px; }
+.grid4 .card h3 { font-size: 20px; line-height: 1.3; margin-bottom: 6px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.grid4 .card p { color: var(--muted); font-size: 15px; }
+.grid4 .card.opt { border-style: dashed; box-shadow: none; }
+@media (hover: hover) and (prefers-reduced-motion: no-preference) { .grid4 .card:hover { transform: translateY(-4px); box-shadow: inset 0 4px 0 var(--c, var(--accent)), 0 18px 30px -16px var(--shadow); } }
+
+/* when */
+.when { display: grid; grid-template-columns: 1.7fr 1fr; gap: 24px; align-items: stretch; }
+.yes { box-shadow: inset 0 4px 0 var(--accent), 0 1px 1px var(--shadow); padding: 12px 24px 12px; }
+.yes .it { display: flex; gap: 16px; align-items: center; padding: 14px 0; border-top: 1px solid var(--line); }
+.yes .it:first-of-type { border-top: 0; }
+.yes h3 { font-size: 18px; line-height: 1.3; }
+.yes p { color: var(--muted); font-size: 15px; }
+.lbl { font: 700 13px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding: 14px 0 0; }
+.yes .lbl { color: var(--accent); }
+.no { border-style: dashed; border-color: var(--muted); background: transparent; box-shadow: none; display: flex; flex-direction: column; }
+.no ul { list-style: none; margin: 16px 0 0; padding: 0; display: flex; flex-direction: column; gap: 16px; }
+.no li { display: flex; gap: 12px; align-items: flex-start; font-size: 17px; line-height: 1.45; }
+.no .bd { width: 32px; height: 32px; border-radius: 10px; margin-top: -3px; }
+.no .bd svg { width: 18px; height: 18px; }
+.cmt { margin-top: 28px; background: #0f141a; color: #2bb534; border-radius: 12px; padding: 14px 16px; font: 14px/1.5 var(--mono); }
+.no .to { margin-top: 14px; color: var(--muted); font-size: 15px; }
+.no .lbl { padding: 0; }
+@media (max-width: 900px) { .when { grid-template-columns: 1fr; } }
+
+/* lifecycle */
+.lc { --g: 48px; }
+.lc-top { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--g); }
+.node { position: relative; background: var(--card); border: 1px solid color-mix(in srgb, var(--c, var(--line)) 55%, var(--line)); border-radius: 16px; padding: 18px 20px 20px;
+  box-shadow: inset 0 4px 0 var(--c, var(--line)), 0 1px 1px var(--shadow); }
+.node.ghost { border-style: dashed; border-color: var(--muted); box-shadow: none; background: transparent; }
+.node .hd { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+.node h3 { font-size: 20px; line-height: 1.25; }
+.node p { color: var(--muted); font-size: 15px; }
+.node .chip { margin-top: 12px; }
+.chip.ok2 { color: var(--ok); background: var(--ok-soft); } .chip.err2 { color: var(--err); background: var(--err-soft); } .chip.blue2 { color: var(--accent); background: var(--accent-soft); }
+.n-rev::before { content: ""; position: absolute; left: calc(-1 * var(--g)); top: 50%; width: var(--g); height: 2px; background: var(--accent); }
+.n-rev::after { content: ""; position: absolute; left: -2px; top: 50%; border: 6px solid transparent; border-left: 9px solid var(--accent); border-right: 0; transform: translateY(-6px); }
+.flash { border-radius: 16px; border: 1px solid var(--accent); border-left-width: 6px; background: var(--accent-soft); padding: 16px 18px; font-size: 15px; align-self: center; }
+.flash b { display: block; margin-bottom: 2px; }
+.stem { width: 2px; height: 40px; background: var(--accent); margin: 0 auto; }
+.fork { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--g); padding-top: 64px; position: relative; }
+.fork::before { content: ""; position: absolute; top: 0; left: calc((100% - 2 * var(--g)) / 6); right: calc((100% - 2 * var(--g)) / 6); height: 2px; background: var(--accent); }
+.out { position: relative; display: flex; flex-direction: column; }
+.out::before { content: ""; position: absolute; left: 50%; top: -64px; height: 64px; width: 2px; background: var(--accent); transform: translateX(-1px); }
+.out::after { content: ""; position: absolute; left: 50%; top: -9px; border: 6px solid transparent; border-top: 9px solid var(--accent); border-bottom: 0; transform: translateX(-6px); }
+.lab { position: absolute; left: 50%; top: -50px; transform: translateX(-50%); background: var(--bg); border: 1px solid var(--line); border-radius: 20px; padding: 0 12px; font-size: 13px; font-weight: 700; line-height: 26px; color: var(--muted); white-space: nowrap; z-index: 1; }
+.down { position: relative; height: 80px; }
+.down::before { content: ""; position: absolute; left: 50%; top: 0; bottom: 9px; width: 2px; background: var(--accent); transform: translateX(-1px); }
+.down::after { content: ""; position: absolute; left: 50%; bottom: 0; border: 6px solid transparent; border-top: 9px solid var(--accent); border-bottom: 0; transform: translateX(-6px); }
+.down .lab { top: 50%; transform: translate(-50%, -50%); }
+@media (max-width: 860px) {
+  .lc { --g: 36px; }
+  .lc-top { grid-template-columns: 1fr; }
+  .n-rev::before { left: 28px; top: calc(-1 * var(--g)); width: 2px; height: var(--g); }
+  .n-rev::after { left: 22px; top: -9px; border: 6px solid transparent; border-top: 9px solid var(--accent); border-bottom: 0; transform: none; }
+  .stem { margin: 0 0 0 28px; }
+  .fork { grid-template-columns: 1fr; gap: 28px; padding-top: 0; border-left: 2px solid var(--accent); margin-left: 28px; padding-left: 20px; }
+  .fork::before, .out::before, .out::after { display: none; }
+  .lab { position: static; transform: none; display: inline-block; align-self: flex-start; margin-bottom: 10px; }
+  .down { height: 76px; }
+  .down::before { left: 28px; } .down::after { left: 28px; }
+  .down .lab { position: absolute; top: 50%; left: 44px; transform: translateY(-50%); margin: 0; }
+  .flash { display: none; }
+}
+
+/* format */
+.an { display: grid; grid-template-columns: 340px 1fr; gap: 24px; align-items: start; }
+.tabs { display: flex; flex-direction: column; gap: 6px; }
+.tabs button { display: flex; align-items: center; gap: 12px; text-align: left; font: 700 16px var(--font); color: var(--ink); background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 0 14px; min-height: 48px; cursor: pointer; transition: border-color .15s, background .15s; }
+.tabs button:hover { border-color: var(--accent); }
+.tabs button[aria-selected="true"] { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 4px 0 0 var(--accent); }
+.nb { width: 30px; height: 30px; border-radius: 50%; background: var(--grad); color: #0f141a; font: 700 14px var(--mono); display: grid; place-items: center; flex: none; }
+.tabs button.o .nb { background: transparent; border: 2px dashed var(--muted); color: var(--muted); }
+.tabs .o { border-style: dashed; }
+.panel { margin-top: 14px; border-radius: 16px; border: 1px solid var(--accent); background: var(--card); padding: 16px 18px; font-size: 15px; color: var(--muted); min-height: 88px; }
+.panel .chip { margin-bottom: 8px; display: none; }
+.panel.is-opt .chip { display: inline-block; }
+.doc { position: relative; background: var(--card); border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 1px 1px var(--shadow), 0 22px 40px -24px var(--shadow); overflow: hidden; }
+.doc::before { content: ""; display: block; height: 4px; background: var(--grad); }
+.ribbon { position: absolute; right: 14px; top: 16px; font: 700 12px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); border: 1px dashed var(--muted); border-radius: 6px; padding: 0 8px; line-height: 22px; }
+.drow { display: grid; grid-template-columns: 130px 1fr; gap: 16px; padding: 14px 20px; border-top: 1px solid var(--line); transition: background .2s; position: relative; }
+.drow:first-of-type { border-top: 0; }
+.drow .k { font: 700 13px var(--mono); color: var(--muted); letter-spacing: .04em; padding-top: 3px; }
+.drow .v { font-size: 15px; }
+.drow.ti .v { font-size: 20px; font-weight: 800; line-height: 1.3; padding-right: 96px; }
+.drow.on { background: color-mix(in srgb, var(--accent) 12%, transparent); box-shadow: inset 4px 0 0 var(--accent); }
+.drow.dim .v, .drow.dim .k { opacity: .8; }
+.drow ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; }
+.drow li b { font-weight: 700; margin-right: 6px; }
+.drow li.p b { color: var(--ok); } .drow li.n b { color: var(--err); }
+@media (max-width: 900px) { .an { grid-template-columns: 1fr; } .tabs { flex-direction: row; flex-wrap: wrap; } .tabs button { flex: 1 1 calc(50% - 6px); } }
+@media (max-width: 520px) { .drow { grid-template-columns: 1fr; gap: 4px; } .drow.ti .v { padding-right: 0; padding-top: 22px; } }
+
+/* install */
+.install { background: #0f141a; color: #ebebf0; border-radius: 24px; padding: 44px 28px; margin-top: 80px; position: relative; overflow: hidden; isolation: isolate; }
+.install::before { content: ""; position: absolute; inset: 0; z-index: -1; background: radial-gradient(520px 320px at 100% 0%, rgba(143,111,240,.38), transparent 70%), radial-gradient(460px 300px at 0% 100%, rgba(31,192,180,.26), transparent 70%), radial-gradient(rgba(255,255,255,.06) 1.3px, transparent 1.7px) 0 0 / 32px 32px; }
+.ig { display: grid; grid-template-columns: 1.1fr 1fr; gap: 36px; align-items: center; }
+.term { background: #0b1016; border: 1px solid #424650; border-radius: 16px; overflow: hidden; box-shadow: 0 24px 40px -20px rgba(0,0,0,.7); }
+.term .th { display: flex; align-items: center; gap: 7px; padding: 10px 14px; border-bottom: 1px solid #424650; background: #161d26; }
+.term .th i { width: 10px; height: 10px; border-radius: 50%; background: #424650; }
+.term .th span { margin-left: auto; font: 700 12px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: #a4a4ad; }
+.term pre { margin: 0; padding: 18px 18px 20px; font: 13px/1.7 var(--mono); color: #c6c6cd; white-space: pre-wrap; word-break: break-word; }
+.term .pr { color: #75cfff; } .term .ok { color: #2bb534; }
+@media (max-width: 900px) { .ig { grid-template-columns: 1fr; } }
+.install h2 { font-size: clamp(26px, 4vw, 36px); line-height: 1.2; margin-bottom: 8px; }
+.install p { color: #c6c6cd; margin-bottom: 22px; }
+.install .cmd { margin-bottom: 14px; }
+.install .sm { font-size: 14px; color: #c6c6cd; margin: 8px 0 6px; }
+.install a { color: #75cfff; }
+.links { margin-top: 26px; display: flex; gap: 22px; flex-wrap: wrap; font-size: 15px; }
+footer { padding: 40px 0 56px; color: var(--muted); font-size: 14px; }
+footer p { margin-bottom: 8px; max-width: 52em; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* motion: hidden state only after JS has run; reduced motion shows everything at once */
+.js .rv { opacity: 0; transform: translateY(14px); transition: opacity .55s ease, transform .55s ease; }
+.js .rv.in { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) { .js .rv { opacity: 1; transform: none; transition: none; } html { scroll-behavior: auto; } }
+</style>
+</head>
+<body>
+<a class="skip" href="#main" data-i18n="skip">Skip to content</a>
+<header class="bar">
+  <div class="wrap">
+    <a class="brand" href="#top" aria-label="aws-adr"><svg viewBox="0 0 64 64" aria-hidden="true"><use href="#mark"/></svg>aws-adr</a>
+    <nav aria-label="Sections">
+      <a href="#when" data-i18n="n_when">When</a>
+      <a href="#lifecycle" data-i18n="n_life">Lifecycle</a>
+      <a href="#format" data-i18n="n_format">Format</a>
+      <a href="#install" data-i18n="n_install">Install</a>
+    </nav>
+    <div class="seg" role="group" aria-label="Language">
+      <button type="button" data-lang="en" aria-pressed="true" lang="en">EN</button>
+      <button type="button" data-lang="vi" aria-pressed="false" lang="vi">VI</button>
+    </div>
+    <button type="button" class="tbtn" id="theme" aria-pressed="false">Dark</button>
+  </div>
+</header>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs><linearGradient id="mg" gradientUnits="userSpaceOnUse" x1="8" y1="10" x2="56" y2="56"><stop offset="0" stop-color="#1fc0b4"/><stop offset=".22" stop-color="#279ee9"/><stop offset=".5" stop-color="#9d70e2"/><stop offset=".74" stop-color="#f05ab0"/><stop offset=".92" stop-color="#fd5970"/><stop offset="1" stop-color="#ff7a3a"/></linearGradient></defs>
+  <symbol id="mark" viewBox="0 0 64 64"><g fill="none" stroke="url(#mg)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"><path d="M32 4 57 18.5V46.5L32 61 7 46.5V18.5Z"/><path d="M7 18.5 32 33 57 18.5M32 33V61"/></g></symbol>
+  <g>
+    <symbol id="i-file" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></symbol>
+    <symbol id="i-edit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></symbol>
+    <symbol id="i-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></symbol>
+    <symbol id="i-loop" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.5 9a9 9 0 0 1 14.9-3.4L23 10M1 14l4.6 4.4A9 9 0 0 0 20.5 15"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.1V12a10 10 0 1 1-5.9-9.1"/><path d="M22 4L12 14l-3-3"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></symbol>
+    <symbol id="i-swap" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></symbol>
+    <symbol id="i-layers" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></symbol>
+    <symbol id="i-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></symbol>
+    <symbol id="i-code" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 18l6-6-6-6M8 6l-6 6 6 6"/></symbol>
+    <symbol id="i-wrench" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.8-3.8a6 6 0 0 1-7.9 7.9l-6.9 6.9a2.1 2.1 0 0 1-3-3l6.9-6.9a6 6 0 0 1 7.9-7.9l-3.8 3.8z"/></symbol>
+    <symbol id="i-scale" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M5 21h14M5 7h14M5 7l-3 8a3.5 3.5 0 0 0 6 0L5 7zM19 7l-3 8a3.5 3.5 0 0 0 6 0l-3-8z"/></symbol>
+    <symbol id="i-flag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22V4M4 4h13l-2 4 2 4H4"/></symbol>
+    <symbol id="i-shieldcheck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></symbol>
+  </g>
+</svg>
+
+<main id="main">
+<section class="hero" id="top">
+  <svg class="cube" viewBox="0 0 64 64" aria-hidden="true"><g fill="none" stroke="url(#mg)" stroke-width="0.8" stroke-linecap="round" stroke-linejoin="round"><path d="M32 4 57 18.5V46.5L32 61 7 46.5V18.5Z"/><path d="M7 18.5 32 33 57 18.5M32 33V61"/></g></svg>
+  <div class="wrap">
+    <div>
+      <p class="eyebrow" data-i18n="eyebrow">Agent skill - AWS Prescriptive Guidance format</p>
+      <h1 data-i18n-html="h1">Record <span class="gx">why</span>, not just what.</h1>
+      <p class="lead" data-i18n="lead">An agent skill that teaches your coding agent to write Architectural Decision Records in the AWS Prescriptive Guidance format.</p>
+      <div class="cmd"><code id="cmd1">npx skills add the-khiem7/aws-adr</code><button type="button" class="btn" data-copy="cmd1" data-i18n="copy">Copy</button></div>
+      <p class="note" data-i18n="note">Works with Claude and other compatible coding agents. Install it with one command.</p>
+    </div>
+    <div class="tl" aria-hidden="true">
+      <div class="mock"><span class="bd"><svg class="ic"><use href="#i-edit"/></svg></span><div class="col"><div class="top"><span class="num">ADR-0001</span><span class="chip blue">Proposed</span></div><div class="t">Example: adopt an event bus</div></div></div>
+      <div class="mock ok"><span class="bd"><svg class="ic"><use href="#i-check"/></svg></span><div class="col"><div class="top"><span class="num">ADR-0002</span><span class="chip ok">Accepted</span></div><div class="t">Example: split the monolith</div></div></div>
+      <div class="mock warn"><span class="bd"><svg class="ic"><use href="#i-swap"/></svg></span><div class="col"><div class="top"><span class="num">ADR-0003</span><span class="chip warn">Superseded</span></div><div class="t">Example: retire the old API</div></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="what">
+  <div class="wrap">
+    <div class="rv">
+      <h2 data-i18n="h_what">One decision, written down for whoever comes next</h2>
+      <p class="intro" data-i18n="p_what">An ADR documents a single significant choice: the context that made it necessary, the decision itself, and its consequences. Together, a project's ADRs form its decision log.</p>
+    </div>
+    <div class="grid4">
+      <div class="card rv c-blue"><span class="bd"><svg class="ic"><use href="#i-file"/></svg></span><h3>Context</h3><p data-i18n="c1">The constraints that make the decision necessary, stated neutrally.</p></div>
+      <div class="card rv c-ok"><span class="bd"><svg class="ic"><use href="#i-flag"/></svg></span><h3>Decision</h3><p data-i18n="c2">The choice made, as an active commitment: We will ...</p></div>
+      <div class="card rv c-warn"><span class="bd"><svg class="ic"><use href="#i-scale"/></svg></span><h3>Consequences</h3><p data-i18n="c3">Positive and negative results, both listed.</p></div>
+      <div class="card rv opt c-mute"><span class="bd"><svg class="ic"><use href="#i-shieldcheck"/></svg></span><h3>Compliance <span class="chip plain" data-i18n="optional">optional</span></h3><p data-i18n="c4">Concrete, checkable rules that follow from the decision.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="when">
+  <div class="wrap">
+    <div class="rv">
+      <h2 data-i18n="h_when">When an ADR is worth writing</h2>
+      <p class="intro" data-i18n="p_when">Write one for decisions about structure, non-functional requirements, dependencies, interfaces and construction techniques. Skip it for routine detail.</p>
+    </div>
+    <div class="when rv">
+      <div class="card yes">
+        <div class="lbl" data-i18n="yes_h">Write an ADR for</div>
+        <div class="it c-blue"><span class="bd"><svg class="ic"><use href="#i-layers"/></svg></span><div><h3 data-i18n="i1n">Structure</h3><p data-i18n="i1d">Architectural patterns, such as microservices over a monolith.</p></div></div>
+        <div class="it c-blue"><span class="bd"><svg class="ic"><use href="#i-shield"/></svg></span><div><h3 data-i18n="i2n">Non-functional requirements</h3><p data-i18n="i2d">Security, high availability, fault tolerance.</p></div></div>
+        <div class="it c-blue"><span class="bd"><svg class="ic"><use href="#i-link"/></svg></span><div><h3 data-i18n="i3n">Dependencies</h3><p data-i18n="i3d">Coupling between components or services.</p></div></div>
+        <div class="it c-blue"><span class="bd"><svg class="ic"><use href="#i-code"/></svg></span><div><h3 data-i18n="i4n">Interfaces</h3><p data-i18n="i4d">APIs and published contracts.</p></div></div>
+        <div class="it c-blue"><span class="bd"><svg class="ic"><use href="#i-wrench"/></svg></span><div><h3 data-i18n="i5n">Construction techniques</h3><p data-i18n="i5d">Libraries, frameworks, tools, and processes.</p></div></div>
+      </div>
+      <div class="card no">
+        <div class="lbl" data-i18n="no_h">Skip the ADR for</div>
+        <ul>
+          <li class="c-err"><span class="bd"><svg class="ic"><use href="#i-x"/></svg></span><span data-i18n="s1">Routine implementation detail</span></li>
+          <li class="c-err"><span class="bd"><svg class="ic"><use href="#i-x"/></svg></span><span data-i18n="s2">A single function's internals</span></li>
+          <li class="c-err"><span class="bd"><svg class="ic"><use href="#i-x"/></svg></span><span data-i18n="s3">Anything easily reversible with no cross-team impact</span></li>
+        </ul>
+        <div class="cmt" aria-hidden="true">// Retry three times, then give up.</div>
+        <p class="to" data-i18n="to">Use a code comment or a regular design note instead.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="lifecycle">
+  <div class="wrap">
+    <div class="rv">
+      <h2 data-i18n="h_life">A short, strict lifecycle</h2>
+      <p class="intro" data-i18n="p_life">A new ADR is Proposed, reviewed, then Accepted or Rejected. Both are immutable: a change of direction becomes a new ADR that supersedes the old one.</p>
+    </div>
+    <div class="lc rv">
+      <div class="lc-top">
+        <div class="node c-blue"><div class="hd"><span class="bd"><svg class="ic"><use href="#i-edit"/></svg></span><h3>Proposed</h3></div><p data-i18n="l_prop">The owner drafts the ADR and opens it for review.</p></div>
+        <div class="node n-rev c-mute"><div class="hd"><span class="bd"><svg class="ic"><use href="#i-users"/></svg></span><h3>Review</h3></div><p data-i18n="l_rev">The team reads it (10-15 minutes), then discusses.</p></div>
+        <div class="flash"><b data-i18n="l_flash_h">Accepted and Rejected are immutable.</b><span data-i18n="l_flash">A change of direction becomes a new ADR.</span></div>
+      </div>
+      <div class="stem" aria-hidden="true"></div>
+      <div class="fork">
+        <div class="out"><span class="lab" data-i18n="lab1">Changes needed</span>
+          <div class="node ghost"><div class="hd c-blue"><span class="bd"><svg class="ic"><use href="#i-loop"/></svg></span><h3 data-i18n="l_stay_n">Stays Proposed</h3></div><p data-i18n="l_stay">The owner actions each comment, then reschedules the review.</p><span class="chip blue2" data-i18n="l_back">back to Review</span></div>
+        </div>
+        <div class="out"><span class="lab" data-i18n="lab2">Team agrees</span>
+          <div class="node c-ok"><div class="hd"><span class="bd"><svg class="ic"><use href="#i-check"/></svg></span><h3>Accepted</h3></div><p data-i18n="l_acc">The owner adds date, version, and stakeholders.</p><span class="chip ok2" data-i18n="l_imm">immutable</span></div>
+          <div class="down" aria-hidden="true"><span class="lab" data-i18n="lab4">A new ADR is accepted</span></div>
+          <div class="node c-warn"><div class="hd"><span class="bd"><svg class="ic"><use href="#i-swap"/></svg></span><h3>Superseded</h3></div><p data-i18n="l_sup">Marked "Superseded by ADR-NNNN" and linked to the new ADR. Never deleted.</p></div>
+        </div>
+        <div class="out"><span class="lab" data-i18n="lab3">Team declines</span>
+          <div class="node c-err"><div class="hd"><span class="bd"><svg class="ic"><use href="#i-x"/></svg></span><h3>Rejected</h3></div><p data-i18n="l_rej">The owner records the reason, so it is not proposed again.</p><span class="chip err2" data-i18n="l_imm2">immutable</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="format">
+  <div class="wrap">
+    <div class="rv">
+      <h2 data-i18n="h_format">Eight sections, always in the same order</h2>
+      <p class="intro" data-i18n="p_format">Pick a section to see what it holds. Compliance and Notes are optional.</p>
+    </div>
+    <div class="an rv">
+      <div>
+        <div class="tabs" role="tablist" aria-label="ADR sections">
+          <button type="button" role="tab" id="t-title" data-sec="title" aria-selected="true" aria-controls="panel"><span class="nb">1</span>Title</button>
+          <button type="button" role="tab" id="t-status" data-sec="status" aria-selected="false" aria-controls="panel" tabindex="-1"><span class="nb">2</span>Status</button>
+          <button type="button" role="tab" id="t-date" data-sec="date" aria-selected="false" aria-controls="panel" tabindex="-1"><span class="nb">3</span>Date</button>
+          <button type="button" role="tab" id="t-context" data-sec="context" aria-selected="false" aria-controls="panel" tabindex="-1"><span class="nb">4</span>Context</button>
+          <button type="button" role="tab" id="t-decision" data-sec="decision" aria-selected="false" aria-controls="panel" tabindex="-1"><span class="nb">5</span>Decision</button>
+          <button type="button" role="tab" id="t-consequences" data-sec="consequences" aria-selected="false" aria-controls="panel" tabindex="-1"><span class="nb">6</span>Consequences</button>
+          <button type="button" role="tab" id="t-compliance" data-sec="compliance" aria-selected="false" aria-controls="panel" tabindex="-1" class="o"><span class="nb">7</span>Compliance</button>
+          <button type="button" role="tab" id="t-notes" data-sec="notes" aria-selected="false" aria-controls="panel" tabindex="-1" class="o"><span class="nb">8</span>Notes</button>
+        </div>
+        <div class="panel" id="panel" role="tabpanel" aria-labelledby="t-title" tabindex="0"><span class="chip plain" data-i18n="optional">optional</span><div id="panel-text">Names the decision, not the problem.</div></div>
+      </div>
+      <div class="doc" role="group" aria-label="Example ADR">
+        <span class="ribbon" data-i18n="ribbon">Example</span>
+        <div class="drow ti on" data-sec="title"><span class="k">Title</span><span class="v" data-i18n="x_title">ADR-0007: We use an event bus between services</span></div>
+        <div class="drow" data-sec="status"><span class="k">Status</span><span class="v"><span class="chip ok2">Accepted</span></span></div>
+        <div class="drow" data-sec="date"><span class="k">Date</span><span class="v mono" style="font-family:var(--mono)">2026-01-15</span></div>
+        <div class="drow" data-sec="context"><span class="k">Context</span><span class="v" data-i18n="x_context">Services call each other directly, so one slow service can delay the others.</span></div>
+        <div class="drow" data-sec="decision"><span class="k">Decision</span><span class="v" data-i18n="x_decision">We will publish domain events to a shared bus instead of calling services directly.</span></div>
+        <div class="drow" data-sec="consequences"><span class="k">Consequences</span><span class="v"><ul><li class="p"><b>Positive:</b><span data-i18n="x_pos">Services fail independently.</span></li><li class="n"><b>Negative:</b><span data-i18n="x_neg">We now operate and monitor the bus.</span></li></ul></span></div>
+        <div class="drow" data-sec="compliance"><span class="k">Compliance</span><span class="v" data-i18n="x_comp">New services publish events through the bus, not through direct calls.</span></div>
+        <div class="drow" data-sec="notes"><span class="k">Notes</span><span class="v" data-i18n="x_notes">Author: &lt;name&gt; - Version: 1.0 - Changelog: 1.0 Initial version</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="wrap">
+  <section class="install rv" id="install" aria-labelledby="h-install">
+    <div class="ig"><div>
+    <h2 id="h-install" data-i18n="h_install">Install it</h2>
+    <p data-i18n="p_install">Then ask your agent to write an ADR, or invoke /aws-adr.</p>
+    <div class="cmd"><code id="cmd2">npx skills add the-khiem7/aws-adr</code><button type="button" class="btn" data-copy="cmd2" data-i18n="copy">Copy</button></div>
+    <div class="sm" data-i18n="update">Update later:</div>
+    <div class="cmd"><code id="cmd3">npx skills update aws-adr -g</code><button type="button" class="btn" data-copy="cmd3" data-i18n="copy">Copy</button></div>
+    <div class="links">
+      <a href="https://github.com/the-khiem7/aws-adr#readme" data-i18n="readme">Read the README on GitHub</a>
+      <a href="https://docs.aws.amazon.com/prescriptive-guidance/latest/architectural-decision-records/adr-process.html">AWS Prescriptive Guidance</a>
+    </div>
+    </div>
+    <div class="term" aria-hidden="true">
+      <div class="th"><i></i><i></i><i></i><span data-i18n="ribbon">Example</span></div>
+      <pre><span class="pr">&gt;</span> /aws-adr write an ADR for moving to an event bus
+
+<span class="ok">created</span> docs/adr/0001-use-an-event-bus.md
+        status: Proposed
+<span class="ok">updated</span> docs/adr/README.md</pre>
+    </div></div>
+  </section>
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p data-i18n="foot">This is an independent project, not affiliated with or endorsed by Amazon Web Services. It is built from the AWS Prescriptive Guidance ADR guide and styled with the Cloudscape design tokens (Apache-2.0). The cube mark is adapted from the AWS favicon; AWS and its marks are trademarks of Amazon.com, Inc. or its affiliates.</p>
+  </div>
+</footer>
+<div class="sr" id="live" aria-live="polite"></div>
+
+<script>
+(function () {
+  var T = {
+    en: {
+      skip: "Skip to content", n_when: "When", n_life: "Lifecycle", n_format: "Format", n_install: "Install",
+      theme_dark: "Dark", theme_light: "Light", theme_label_dark: "Switch to dark theme", theme_label_light: "Switch to light theme",
+      eyebrow: "Agent skill - AWS Prescriptive Guidance format",
+      h1: 'Record <span class="gx">why</span>, not just what.',
+      lead: "An agent skill that teaches your coding agent to write Architectural Decision Records in the AWS Prescriptive Guidance format.",
+      note: "Works with Claude and other compatible coding agents. Install it with one command.",
+      copy: "Copy", copied_short: "Copied", copied: "Copied to clipboard", optional: "optional",
+      h_what: "One decision, written down for whoever comes next",
+      p_what: "An ADR documents a single significant choice: the context that made it necessary, the decision itself, and its consequences. Together, a project's ADRs form its decision log.",
+      c1: "The constraints that make the decision necessary, stated neutrally.",
+      c2: "The choice made, as an active commitment: We will ...",
+      c3: "Positive and negative results, both listed.",
+      c4: "Concrete, checkable rules that follow from the decision.",
+      h_when: "When an ADR is worth writing",
+      p_when: "Write one for decisions about structure, non-functional requirements, dependencies, interfaces and construction techniques. Skip it for routine detail.",
+      yes_h: "Write an ADR for", no_h: "Skip the ADR for",
+      i1n: "Structure", i1d: "Architectural patterns, such as microservices over a monolith.",
+      i2n: "Non-functional requirements", i2d: "Security, high availability, fault tolerance.",
+      i3n: "Dependencies", i3d: "Coupling between components or services.",
+      i4n: "Interfaces", i4d: "APIs and published contracts.",
+      i5n: "Construction techniques", i5d: "Libraries, frameworks, tools, and processes.",
+      s1: "Routine implementation detail", s2: "A single function's internals", s3: "Anything easily reversible with no cross-team impact",
+      to: "Use a code comment or a regular design note instead.",
+      h_life: "A short, strict lifecycle",
+      p_life: "A new ADR is Proposed, reviewed, then Accepted or Rejected. Both are immutable: a change of direction becomes a new ADR that supersedes the old one.",
+      l_prop: "The owner drafts the ADR and opens it for review.",
+      l_rev: "The team reads it (10-15 minutes), then discusses.",
+      l_flash_h: "Accepted and Rejected are immutable.", l_flash: "A change of direction becomes a new ADR.",
+      lab1: "Changes needed", lab2: "Team agrees", lab3: "Team declines", lab4: "A new ADR is accepted",
+      l_stay_n: "Stays Proposed", l_stay: "The owner actions each comment, then reschedules the review.", l_back: "back to Review",
+      l_acc: "The owner adds date, version, and stakeholders.", l_imm: "immutable", l_imm2: "immutable",
+      l_rej: "The owner records the reason, so it is not proposed again.",
+      l_sup: 'Marked "Superseded by ADR-NNNN" and linked to the new ADR. Never deleted.',
+      h_format: "Eight sections, always in the same order",
+      p_format: "Pick a section to see what it holds. Compliance and Notes are optional.",
+      d_title: "Names the decision, not the problem.",
+      d_status: "Proposed, Accepted, Rejected, or Superseded by ADR-NNNN.",
+      d_date: "The date the status last changed.",
+      d_context: "The technical, business, and team constraints that make the decision necessary, stated neutrally.",
+      d_decision: 'The choice made, stated as an active commitment ("We will...").',
+      d_consequences: "The results of the decision, split into Positive: and Negative: lists.",
+      d_compliance: "Concrete, checkable rules that follow from the decision.",
+      d_notes: "Author, version, and a changelog.",
+      ribbon: "Example",
+      x_title: "ADR-0007: We use an event bus between services",
+      x_context: "Services call each other directly, so one slow service can delay the others.",
+      x_decision: "We will publish domain events to a shared bus instead of calling services directly.",
+      x_pos: "Services fail independently.", x_neg: "We now operate and monitor the bus.",
+      x_comp: "New services publish events through the bus, not through direct calls.",
+      x_notes: "Author: <name> - Version: 1.0 - Changelog: 1.0 Initial version",
+      h_install: "Install it", p_install: "Then ask your agent to write an ADR, or invoke /aws-adr.",
+      update: "Update later:", readme: "Read the README on GitHub",
+      foot: "This is an independent project, not affiliated with or endorsed by Amazon Web Services. It is built from the AWS Prescriptive Guidance ADR guide and styled with the Cloudscape design tokens (Apache-2.0). The cube mark is adapted from the AWS favicon; AWS and its marks are trademarks of Amazon.com, Inc. or its affiliates."
+    },
+    vi: {
+      skip: "Chuyển đến nội dung", n_when: "Khi nào", n_life: "Vòng đời", n_format: "Định dạng", n_install: "Cài đặt",
+      theme_dark: "Tối", theme_light: "Sáng", theme_label_dark: "Chuyển sang giao diện tối", theme_label_light: "Chuyển sang giao diện sáng",
+      eyebrow: "Agent skill - định dạng AWS Prescriptive Guidance",
+      h1: 'Ghi lại <span class="gx">lý do</span>, không chỉ quyết định.',
+      lead: "Một agent skill giúp trợ lý lập trình của bạn viết Architectural Decision Record (ADR, hồ sơ quyết định kiến trúc) theo định dạng AWS Prescriptive Guidance.",
+      note: "Dùng được với Claude và các trợ lý lập trình tương thích khác. Cài bằng một lệnh.",
+      copy: "Sao chép", copied_short: "Đã chép", copied: "Đã sao chép vào bộ nhớ tạm", optional: "tùy chọn",
+      h_what: "Mỗi quyết định được ghi lại cho người đến sau",
+      p_what: "Một ADR ghi lại một lựa chọn quan trọng: bối cảnh khiến nó cần thiết, chính quyết định, và hệ quả. Các ADR của dự án hợp thành nhật ký quyết định.",
+      c1: "Các ràng buộc khiến quyết định trở nên cần thiết, nêu một cách trung lập.",
+      c2: "Lựa chọn được đưa ra, như một cam kết chủ động: We will ...",
+      c3: "Kết quả tích cực và tiêu cực, đều được liệt kê.",
+      c4: "Các quy tắc cụ thể, kiểm tra được, rút ra từ quyết định.",
+      h_when: "Khi nào nên viết ADR",
+      p_when: "Viết ADR cho các quyết định về cấu trúc, yêu cầu phi chức năng, phụ thuộc, giao diện và kỹ thuật xây dựng. Bỏ qua với chi tiết triển khai thông thường.",
+      yes_h: "Viết ADR cho", no_h: "Bỏ qua ADR với",
+      i1n: "Cấu trúc", i1d: "Các mẫu kiến trúc, ví dụ chọn microservices thay vì monolith.",
+      i2n: "Yêu cầu phi chức năng", i2d: "Bảo mật, tính sẵn sàng cao, khả năng chịu lỗi.",
+      i3n: "Phụ thuộc", i3d: "Sự gắn kết giữa các thành phần hoặc dịch vụ.",
+      i4n: "Giao diện", i4d: "API và các hợp đồng đã công bố.",
+      i5n: "Kỹ thuật xây dựng", i5d: "Thư viện, framework, công cụ và quy trình.",
+      s1: "Chi tiết triển khai thông thường", s2: "Phần bên trong của một hàm", s3: "Mọi thứ dễ đảo ngược và không ảnh hưởng tới nhiều nhóm",
+      to: "Hãy dùng chú thích trong code hoặc ghi chú thiết kế thông thường.",
+      h_life: "Vòng đời ngắn gọn, chặt chẽ",
+      p_life: "ADR mới ở trạng thái Proposed (đề xuất), được xem xét, rồi Accepted (chấp nhận) hoặc Rejected (từ chối). Cả hai đều bất biến: khi đổi hướng, hãy viết ADR mới thay thế (supersede) ADR cũ.",
+      l_prop: "Chủ sở hữu soạn ADR và mở ra để xem xét.",
+      l_rev: "Nhóm đọc (10-15 phút), rồi thảo luận.",
+      l_flash_h: "Accepted và Rejected là bất biến.", l_flash: "Khi đổi hướng, hãy viết một ADR mới.",
+      lab1: "Cần chỉnh sửa", lab2: "Nhóm đồng ý", lab3: "Nhóm từ chối", lab4: "Một ADR mới được chấp nhận",
+      l_stay_n: "Vẫn là Proposed", l_stay: "Chủ sở hữu xử lý từng góp ý rồi đặt lại buổi xem xét.", l_back: "quay lại Review",
+      l_acc: "Chủ sở hữu thêm ngày, phiên bản và các bên liên quan.", l_imm: "bất biến", l_imm2: "bất biến",
+      l_rej: "Chủ sở hữu ghi lại lý do để lựa chọn này không bị đề xuất lại.",
+      l_sup: 'Đánh dấu "Superseded by ADR-NNNN" và liên kết tới ADR mới. Không bao giờ bị xóa.',
+      h_format: "Tám mục, luôn theo cùng một thứ tự",
+      p_format: "Chọn một mục để xem nó chứa gì. Compliance và Notes là tùy chọn.",
+      d_title: "Đặt tên cho quyết định, không phải cho vấn đề.",
+      d_status: "Proposed, Accepted, Rejected, hoặc Superseded by ADR-NNNN.",
+      d_date: "Ngày trạng thái thay đổi gần nhất.",
+      d_context: "Các ràng buộc về kỹ thuật, kinh doanh và đội ngũ khiến quyết định trở nên cần thiết, nêu một cách trung lập.",
+      d_decision: 'Lựa chọn được đưa ra, nêu như một cam kết chủ động ("We will...").',
+      d_consequences: "Kết quả của quyết định, chia thành hai danh sách Positive: và Negative:.",
+      d_compliance: "Các quy tắc cụ thể, kiểm tra được, rút ra từ quyết định.",
+      d_notes: "Tác giả, phiên bản và nhật ký thay đổi.",
+      ribbon: "Ví dụ",
+      x_title: "ADR-0007: Chúng tôi dùng event bus giữa các dịch vụ",
+      x_context: "Các dịch vụ gọi trực tiếp nhau, nên một dịch vụ chậm có thể làm chậm các dịch vụ khác.",
+      x_decision: "Chúng tôi sẽ phát các domain event lên một bus dùng chung thay vì gọi trực tiếp giữa các dịch vụ.",
+      x_pos: "Các dịch vụ lỗi độc lập với nhau.", x_neg: "Chúng tôi phải vận hành và giám sát bus.",
+      x_comp: "Dịch vụ mới phát event qua bus, không gọi trực tiếp.",
+      x_notes: "Author: <tên> - Version: 1.0 - Changelog: 1.0 Phiên bản đầu tiên",
+      h_install: "Cài đặt", p_install: "Sau đó hãy nhờ trợ lý viết một ADR, hoặc gọi /aws-adr.",
+      update: "Cập nhật sau này:", readme: "Đọc README trên GitHub",
+      foot: "Dự án độc lập, không liên kết với và không được Amazon Web Services bảo trợ. Dựa trên hướng dẫn ADR của AWS Prescriptive Guidance, giao diện dùng design token Cloudscape (Apache-2.0). Biểu tượng khối lập phương được phỏng theo favicon của AWS; AWS và các nhãn hiệu của AWS thuộc về Amazon.com, Inc. hoặc các công ty liên kết."
+    }
+  };
+  var root = document.documentElement, current = "title";
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('[role="tab"]'));
+  var panel = document.getElementById("panel"), panelText = document.getElementById("panel-text");
+  function save(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+
+  function selectSec(id) {
+    current = id;
+    tabs.forEach(function (t) { var on = t.dataset.sec === id; t.setAttribute("aria-selected", String(on)); t.tabIndex = on ? 0 : -1; });
+    document.querySelectorAll(".drow").forEach(function (r) { r.classList.toggle("on", r.dataset.sec === id); });
+    panel.setAttribute("aria-labelledby", "t-" + id);
+    panel.classList.toggle("is-opt", id === "compliance" || id === "notes");
+    panelText.textContent = T[root.dataset.lang]["d_" + id];
+  }
+  function applyTheme(t) {
+    var d = T[root.dataset.lang], b = document.getElementById("theme");
+    root.dataset.theme = t;
+    b.setAttribute("aria-pressed", String(t === "dark"));
+    b.textContent = t === "dark" ? d.theme_light : d.theme_dark;
+    b.setAttribute("aria-label", t === "dark" ? d.theme_label_light : d.theme_label_dark);
+  }
+  function applyLang(l) {
+    var d = T[l];
+    root.lang = l; root.dataset.lang = l;
+    document.querySelectorAll("[data-i18n]").forEach(function (el) { var v = d[el.getAttribute("data-i18n")]; if (v) el.textContent = v; });
+    document.querySelectorAll("[data-i18n-html]").forEach(function (el) { var v = d[el.getAttribute("data-i18n-html")]; if (v) el.innerHTML = v; });
+    document.querySelectorAll("button[data-lang]").forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.lang === l)); });
+    applyTheme(root.dataset.theme);
+    selectSec(current);
+  }
+  document.querySelectorAll("button[data-lang]").forEach(function (b) {
+    b.addEventListener("click", function () { save("adr-lang", b.dataset.lang); applyLang(b.dataset.lang); });
+  });
+  document.getElementById("theme").addEventListener("click", function () {
+    var t = root.dataset.theme === "dark" ? "light" : "dark"; save("adr-theme", t); applyTheme(t);
+  });
+  tabs.forEach(function (t, i) {
+    t.addEventListener("click", function () { selectSec(t.dataset.sec); });
+    t.addEventListener("keydown", function (e) {
+      var n = null;
+      if (e.key === "ArrowDown" || e.key === "ArrowRight") n = (i + 1) % tabs.length;
+      else if (e.key === "ArrowUp" || e.key === "ArrowLeft") n = (i - 1 + tabs.length) % tabs.length;
+      else if (e.key === "Home") n = 0; else if (e.key === "End") n = tabs.length - 1;
+      if (n !== null) { e.preventDefault(); tabs[n].focus(); selectSec(tabs[n].dataset.sec); }
+    });
+  });
+  document.querySelectorAll(".drow").forEach(function (r) {
+    r.addEventListener("mouseenter", function () { if (matchMedia("(hover: hover)").matches) selectSec(r.dataset.sec); });
+  });
+  applyLang(root.dataset.lang);
+
+  document.querySelectorAll("[data-copy]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var el = document.getElementById(btn.dataset.copy), text = el.textContent, d = T[root.dataset.lang];
+      function done() {
+        btn.textContent = d.copied_short;
+        document.getElementById("live").textContent = d.copied;
+        setTimeout(function () { btn.textContent = T[root.dataset.lang].copy; document.getElementById("live").textContent = ""; }, 1800);
+      }
+      function fallback() {
+        var r = document.createRange(); r.selectNodeContents(el);
+        var s = getSelection(); s.removeAllRanges(); s.addRange(r);
+        try { document.execCommand("copy"); } catch (e) {}
+        done();
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, fallback); else fallback();
+    });
+  });
+
+  var els = document.querySelectorAll(".rv");
+  if ("IntersectionObserver" in window && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    var io = new IntersectionObserver(function (es) {
+      es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } });
+    }, { threshold: 0.1 });
+    els.forEach(function (e) { io.observe(e); });
+  } else {
+    els.forEach(function (e) { e.classList.add("in"); });
+  }
+})();
+</script>
+</body>
+</html>

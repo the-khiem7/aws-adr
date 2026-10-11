@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>aws-adr figures</title>
+<!-- Source of ../lifecycle*.webp, ../anatomy*.webp and ../when-to-adr*.webp. Render with:
+     uvx --from playwright --with pillow python -I <skill-dir>/scripts/render.py assets/source/figures.html --root assets/source --out assets
+     Each .item is 1200 CSS px wide, so 2400 px in the image. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&display=swap">
+<script src="shared.js"></script>
+<link rel="stylesheet" href="shared.css">
+<style>
+.box { position: absolute; padding: 16px 18px; }
+.box .hd { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+.box .chip { margin-top: 10px; }
+svg.wires { position: absolute; left: 0; top: -40px; overflow: visible; pointer-events: none; }
+svg.wires text { font: 700 17px "Open Sans", Arial, sans-serif; fill: var(--muted); text-anchor: middle; }
+.ln { fill: none; stroke: var(--accent); stroke-width: 2.5; }
+.ln.dash { stroke-dasharray: 8 6; stroke: var(--muted); }
+.hd-a { fill: var(--accent); }
+.hd-m { fill: var(--muted); }
+.lab { fill: var(--paper); }
+
+/* anatomy */
+.rows { position: absolute; left: 48px; right: 48px; top: 0; display: flex; flex-direction: column; gap: 8px; }
+.row { position: relative; display: grid; grid-template-columns: 40px 230px 1fr auto; align-items: center; gap: 18px; padding: 0 22px 0 20px; height: 62px; }
+.row .nb { width: 36px; height: 36px; border-radius: 50%; background: var(--grad); color: var(--on-grad); font: 700 18px Monaco, Menlo, Consolas, monospace; display: grid; place-items: center; }
+.row.ghost .nb { background: transparent; border: 2px dashed var(--muted); color: var(--muted); }
+.row .nm { font-size: 22px; }
+.row .ds { font-size: 19px; }
+
+/* when-to-adr */
+.pane { position: absolute; top: 0; height: 520px; padding: 26px 30px; }
+.kv { display: flex; flex-direction: column; margin-top: 14px; }
+.kv > div { display: flex; align-items: center; gap: 18px; border-top: 1.5px solid var(--cardline); padding: 12px 0; }
+.kv .nm { font-size: 21px; }
+.kv .ds { font-size: 18px; margin-top: 1px; }
+ul.skip { margin: 18px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 26px; }
+ul.skip li { display: flex; gap: 14px; align-items: flex-start; font-size: 20px; line-height: 1.35; color: var(--ink); }
+ul.skip .bd { width: 34px; height: 34px; border-radius: 10px; margin-top: -2px; }
+ul.skip .bd svg { width: 18px; height: 18px; }
+.cmt { margin-top: 44px; background: #0f141a; color: #c6c6cd; border-radius: 12px; padding: 14px 16px; font: 17px/1.4 Monaco, Menlo, Consolas, monospace; }
+.cmt i { color: #2bb534; font-style: normal; }
+.to { margin-top: 16px; font-size: 19px; line-height: 1.4; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="sheet">
+
+<div class="item" id="lifecycle" style="height:772px">
+  <div class="fh"><svg class="mk"><use href="#mark"/></svg><b>ADR lifecycle</b><span>aws-adr</span></div>
+  <div class="stage">
+    <div class="card s c-blue box" style="left:36px;top:225px;width:190px;height:190px"><div class="hd"><span class="bd"><svg class="ic"><use href="#i-edit"/></svg></span><span class="nm">Proposed</span></div><div class="ds">The owner drafts the ADR and opens it for review.</div></div>
+    <div class="card s c-mute box" style="left:262px;top:225px;width:190px;height:190px"><div class="hd"><span class="bd"><svg class="ic"><use href="#i-users"/></svg></span><span class="nm">Review</span></div><div class="ds">The team reads it (10-15 minutes), then discusses.</div></div>
+
+    <div class="card ghost box" style="left:596px;top:20px;width:246px;height:170px"><div class="hd"><span class="bd c-blue"><svg class="ic"><use href="#i-loop"/></svg></span><span class="nm" style="font-size:20px">Stays Proposed</span></div><div class="ds">The owner actions each comment, then reschedules the review.</div></div>
+    <div class="card s c-ok box" style="left:596px;top:225px;width:246px;height:190px"><div class="hd"><span class="bd"><svg class="ic"><use href="#i-check"/></svg></span><span class="nm">Accepted</span></div><div class="ds">The owner adds date, version, and stakeholders.</div><span class="chip ok">immutable</span></div>
+    <div class="card s c-err box" style="left:596px;top:435px;width:246px;height:200px"><div class="hd"><span class="bd"><svg class="ic"><use href="#i-x"/></svg></span><span class="nm">Rejected</span></div><div class="ds">The owner records the reason, so it is not proposed again.</div><span class="chip err">immutable</span></div>
+
+    <div class="card s c-warn box" style="left:944px;top:225px;width:220px;height:190px"><div class="hd"><span class="bd"><svg class="ic"><use href="#i-swap"/></svg></span><span class="nm">Superseded</span></div><div class="ds">Marked "Superseded by ADR-NNNN" and linked to the new ADR. Never deleted.</div></div>
+
+    <svg class="wires" width="1200" height="680" viewBox="0 -40 1200 680">
+      <defs>
+        <marker id="a" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0L10 5L0 10z" class="hd-a"/></marker>
+        <marker id="am" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0L10 5L0 10z" class="hd-m"/></marker>
+      </defs>
+      <path class="ln" marker-end="url(#a)" d="M226 320H258"/>
+      <path class="ln" marker-end="url(#a)" d="M452 320H592"/>
+      <path class="ln" marker-end="url(#a)" d="M452 320H480V105H592"/>
+      <path class="ln" marker-end="url(#a)" d="M452 320H480V535H592"/>
+      <path class="ln" marker-end="url(#a)" d="M842 320H940"/>
+      <path class="ln dash" marker-end="url(#am)" d="M719 20V-16H357V221"/>
+      <text x="536" y="93">changes</text>
+      <text x="536" y="308">agree</text>
+      <text x="536" y="523">decline</text>
+      <text x="891" y="291">new ADR</text>
+      <text x="891" y="311">accepted</text>
+      <rect class="lab" x="465" y="-31" width="150" height="30" rx="6"/>
+      <text x="540" y="-9">review again</text>
+    </svg>
+  </div>
+</div>
+
+<div class="item" id="anatomy" style="height:692px">
+  <div class="fh"><svg class="mk"><use href="#mark"/></svg><b>The eight sections</b><span>aws-adr</span></div>
+  <div class="stage">
+    <div class="rows">
+      <div class="card row"><span class="nb">1</span><span class="nm">Title</span><span class="ds">Names the decision, not the problem.</span></div>
+      <div class="card row"><span class="nb">2</span><span class="nm">Status</span><span class="ds">Proposed, Accepted, Rejected, or Superseded by ADR-NNNN.</span></div>
+      <div class="card row"><span class="nb">3</span><span class="nm">Date</span><span class="ds">The date the status last changed.</span></div>
+      <div class="card row"><span class="nb">4</span><span class="nm">Context</span><span class="ds">The constraints that make the decision necessary, stated neutrally.</span></div>
+      <div class="card row"><span class="nb">5</span><span class="nm">Decision</span><span class="ds">The choice made, as an active commitment: "We will ..."</span></div>
+      <div class="card row"><span class="nb">6</span><span class="nm">Consequences</span><span class="ds">The results of the decision, split into two lists.</span><span><span class="chip ok">Positive:</span> <span class="chip err">Negative:</span></span></div>
+      <div class="card ghost row"><span class="nb">7</span><span class="nm">Compliance</span><span class="ds">Concrete, checkable rules that follow from the decision.</span><span class="chip plain">optional</span></div>
+      <div class="card ghost row"><span class="nb">8</span><span class="nm">Notes</span><span class="ds">Author, version, and a changelog.</span><span class="chip plain">optional</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="item" id="when-to-adr" style="height:660px">
+  <div class="fh"><svg class="mk"><use href="#mark"/></svg><b>When to write an ADR</b><span>aws-adr</span></div>
+  <div class="stage">
+    <div class="card s c-blue pane" style="left:48px;width:700px">
+      <span class="eyebrow" style="color:var(--accent)">Write an ADR for</span>
+      <div class="kv">
+        <div><span class="bd c-blue"><svg class="ic"><use href="#i-layers"/></svg></span><div><div class="nm">Structure</div><div class="ds">Architectural patterns, such as microservices over a monolith.</div></div></div>
+        <div><span class="bd c-blue"><svg class="ic"><use href="#i-shield"/></svg></span><div><div class="nm">Non-functional requirements</div><div class="ds">Security, high availability, fault tolerance.</div></div></div>
+        <div><span class="bd c-blue"><svg class="ic"><use href="#i-link"/></svg></span><div><div class="nm">Dependencies</div><div class="ds">Coupling between components or services.</div></div></div>
+        <div><span class="bd c-blue"><svg class="ic"><use href="#i-code"/></svg></span><div><div class="nm">Interfaces</div><div class="ds">APIs and published contracts.</div></div></div>
+        <div><span class="bd c-blue"><svg class="ic"><use href="#i-wrench"/></svg></span><div><div class="nm">Construction techniques</div><div class="ds">Libraries, frameworks, tools, and processes.</div></div></div>
+      </div>
+    </div>
+    <div class="card ghost pane" style="left:780px;width:372px;display:flex;flex-direction:column">
+      <span class="eyebrow">Skip the ADR for</span>
+      <ul class="skip">
+        <li><span class="bd c-err"><svg class="ic"><use href="#i-x"/></svg></span>Routine implementation detail</li>
+        <li><span class="bd c-err"><svg class="ic"><use href="#i-x"/></svg></span>A single function's internals</li>
+        <li><span class="bd c-err"><svg class="ic"><use href="#i-x"/></svg></span>Anything easily reversible with no cross-team impact</li>
+      </ul>
+      <div class="cmt"><i>// Retry three times, then give up.</i></div>
+      <div class="to">Use a code comment or a regular design note instead.</div>
+    </div>
+  </div>
+</div>
+
+</div>
+</body>
+</html>

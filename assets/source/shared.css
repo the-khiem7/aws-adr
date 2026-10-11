@@ -1,0 +1,72 @@
+/* Look: AWS Cloudscape design tokens (visual refresh), light and dark, plus a gradient accent sampled from the brand mark.
+   Contract with render.py: .item blocks with unique ids inside .sheet, zoom 2, theming via html[data-theme="dark"], --cardline.
+   Every direct child of a figure .item is absolutely positioned, so the ::before backdrop never paints over content. */
+
+:root {
+  --paper: #f6f6f9; --ink: #0f141a; --muted: #424650;
+  --accent: #006ce0; --accent-soft: #f0fbff;
+  --ok: #00802f; --ok-soft: #effff1;
+  --err: #db0000; --err-soft: #fff5f5;
+  --warn: #855900; --warn-soft: #fffef0;
+  --card: #ffffff; --cardline: #c6c6cd; --shadow: rgba(0, 7, 22, 0.14);
+  --on: #ffffff; --on-grad: #0f141a;
+  --dot: rgba(0, 7, 22, 0.09);
+  --glow1: rgba(31, 192, 180, 0.16); --glow2: rgba(143, 111, 240, 0.16); --glow3: rgba(255, 106, 85, 0.14);
+  --grad: linear-gradient(135deg, #1fc0b4, #279ee9 22%, #9d70e2 50%, #f05ab0 74%, #fd5970 92%, #ff7a3a);
+}
+html[data-theme="dark"] {
+  --paper: #0f141a; --ink: #ebebf0; --muted: #c6c6cd;
+  --accent: #42b4ff; --accent-soft: #001129;
+  --ok: #2bb534; --ok-soft: #001401;
+  --err: #ff7a7a; --err-soft: #1f0000;
+  --warn: #fbd332; --warn-soft: #191100;
+  --card: #161d26; --cardline: #424650; --shadow: rgba(0, 0, 0, 0.5);
+  --on: #0f141a;
+  --dot: rgba(255, 255, 255, 0.07);
+  --glow1: rgba(31, 192, 180, 0.2); --glow2: rgba(143, 111, 240, 0.26); --glow3: rgba(255, 106, 85, 0.2);
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: #888; }
+.sheet { width: max-content; padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+.item {
+  zoom: 2; position: relative; overflow: hidden; width: 1200px;
+  font-family: "Open Sans", "Helvetica Neue", Roboto, Arial, sans-serif; color: var(--ink); background: var(--paper);
+}
+.item::before {
+  content: ""; position: absolute; inset: 0;
+  background:
+    radial-gradient(520px 340px at 0% 0%, var(--glow1), transparent 70%),
+    radial-gradient(560px 360px at 100% 0%, var(--glow2), transparent 70%),
+    radial-gradient(520px 340px at 100% 100%, var(--glow3), transparent 70%),
+    radial-gradient(var(--dot) 1.3px, transparent 1.7px) 0 0 / 32px 32px;
+}
+.mono { font-family: Monaco, Menlo, Consolas, "Courier New", monospace; }
+
+/* figure header: mark, figure name, gradient hairline */
+.fh { position: absolute; left: 48px; right: 48px; top: 22px; height: 34px; display: flex; align-items: center; gap: 12px; }
+.fh svg.mk { width: 30px; height: 30px; flex: none; }
+.fh b { font: 700 17px Monaco, Menlo, Consolas, monospace; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.fh span { margin-left: auto; font: 700 17px Monaco, Menlo, Consolas, monospace; color: var(--muted); }
+.fh::after { content: ""; position: absolute; left: 0; right: 0; bottom: -9px; height: 2px; border-radius: 2px; background: var(--grad); opacity: 0.75; }
+.stage { position: absolute; left: 0; right: 0; top: 104px; }
+
+.card { background: var(--card); border: 1.5px solid var(--cardline); border-radius: 16px; box-shadow: 0 1px 1px var(--shadow), 0 14px 30px -16px var(--shadow); }
+.card.ghost { border-style: dashed; border-color: var(--muted); background: transparent; box-shadow: none; }
+.card.s { border-color: color-mix(in srgb, var(--c, var(--accent)) 60%, var(--cardline)); }
+.card.s::after { content: ""; position: absolute; left: 18px; right: 18px; top: -1.5px; height: 4px; border-radius: 0 0 4px 4px; background: var(--c, var(--accent)); }
+.c-ok { --c: var(--ok); } .c-err { --c: var(--err); } .c-warn { --c: var(--warn); } .c-blue { --c: var(--accent); } .c-mute { --c: var(--muted); }
+
+.bd { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; flex: none;
+  color: var(--c, var(--accent)); background: color-mix(in srgb, var(--c, var(--accent)) 14%, transparent); }
+.bd svg, svg.ic { width: 22px; height: 22px; }
+
+.eyebrow { font: 700 17px Monaco, Menlo, Consolas, monospace; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.chip { font: 700 17px "Open Sans", Arial, sans-serif; padding: 1px 10px; border-radius: 4px; border: 1.5px solid currentColor; white-space: nowrap; display: inline-block; }
+.chip.blue { color: var(--accent); background: var(--accent-soft); }
+.chip.ok { color: var(--ok); background: var(--ok-soft); }
+.chip.err { color: var(--err); background: var(--err-soft); }
+.chip.warn { color: var(--warn); background: var(--warn-soft); }
+.chip.plain { color: var(--muted); background: transparent; }
+.nm { font: 700 22px "Open Sans", Arial, sans-serif; color: var(--ink); }
+.ds { font-size: 18px; line-height: 1.4; color: var(--muted); }
